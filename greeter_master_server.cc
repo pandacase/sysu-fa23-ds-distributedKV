@@ -80,7 +80,16 @@ void RunServer(uint16_t port) {
 }
 
 int main(int argc, char** argv) {
+  leveldb::DB* db;
+  leveldb::Options options;
+  options.create_if_missing = true;
+  leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+  assert(status.ok());
+  std::cout << status.ok() << std::endl;
+
   absl::ParseCommandLine(argc, argv);
   RunServer(absl::GetFlag(FLAGS_port));
+
+  delete db;
   return 0;
 }
