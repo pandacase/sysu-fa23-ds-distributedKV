@@ -41,33 +41,49 @@ message HelloReply {
   string message = 1;
 }
 
+
 // client methods to master server
 service clientMethods {
-  rpc Setup(clientRequest) returns (stream clientResponse) {}
-  rpc Get(clientRequest) returns (stream clientResponse) {}
-  rpc Put(clientRequest) returns (stream clientResponse) {}
-  rpc Del(clientRequest) returns (stream clientResponse) {}
+  rpc Get(KVRequest) returns (KVResponse) {}
+  rpc Put(KVRequest) returns (KVResponse) {}
+  rpc Del(KVRequest) returns (KVResponse) {}
 }
 
-message clientRequest {
-  string method = 1;
+message KVRequest {
   string key = 2;
   string value = 3;
 }
 
-message clientResponse {
-  string response = 1;
-  string state = 2;
-  repeated int32 port = 3;
+message KVResponse {
+  string message = 1;
+  string value = 2;
 }
 
-
-// worker register
 service workerRegister {
-
+  rpc Register(workerSetup) returns (survivalList) {}
 }
 
-message Register {
+message workerSetup {
   string request = 1;
 }
 
+message survivalList {
+  string message = 1;
+  repeated int32 port = 2;
+}
+
+
+service workerSpread {
+  rpc Spread(updateNotice) returns (updateResponse) {}
+}
+
+message updateNotice {
+  bool rollBackFlag = 1;
+  string method = 2;
+  string key = 3;
+  string value = 4;
+}
+
+message updateResponse {
+  string message = 1;
+}
