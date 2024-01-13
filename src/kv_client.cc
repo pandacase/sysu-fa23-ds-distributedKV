@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -76,6 +77,57 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
+void processCommand(const std::vector<std::string>& args) {
+  std::string method = args[0];
+  std::string key = "";
+  std::string value = "";
+  if (method.compare("help") == 0) {
+    std::cout << "usage: <method> [-<args> <value>]" << std::endl;
+    std::cout << std::endl;
+    std::cout << "These are methods' examples:" << std::endl;
+    std::cout << "get -k 16         Get the value from remoteDB with key=16." << std::endl;
+    std::cout << "del -k 32         Delete the entry on the remoteDB with key=32." << std::endl;
+    std::cout << "put -k 64  -v 8   Put the value=8 to the remoteDB with key=64" << std::endl;
+    std::cout << std::endl;
+  } else if (method.compare("get") == 0) {
+    if (args.size() != 3) {
+      std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." << std::endl;
+    } else {
+      if (args[1].compare("-k") == 0) {
+        key = args[2];
+        
+      } else {
+        std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." << std::endl;
+      }
+    }
+  } else if (method.compare("del") == 0) {
+    if (args.size() != 3) {
+      std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." << std::endl;
+    } else {
+      if (args[1].compare("-k") == 0) {
+        key = args[2];
+
+      } else {
+        std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." << std::endl;
+      }
+    }
+  } else if (method.compare("put") == 0) {
+    if (args.size() != 5) {
+      std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." << std::endl;
+    } else {
+      if (args[1].compare("-k") == 0 && args[3].compare("-v") == 0) {
+        key = args[2];
+        value = args[4];
+
+      } else {
+        std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." << std::endl;
+      }
+    }
+  } else {
+    std::cout << "pandaRDB: " << method << " is not a command. See 'help'." << std::endl;
+  }
+}
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   // Instantiate the client. It requires a channel, out of which the actual RPCs
@@ -89,6 +141,37 @@ int main(int argc, char** argv) {
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
+
+  std::cout << "                                                " << std::endl;
+  std::cout << "/\033[1;34m$$$$$$$\033[0m                            /\033[1;34m$$\033[0m          " << std::endl;
+  std::cout << "| \033[1;34m$$\033[0m__  \033[1;34m$$\033[0m                          | \033[1;34m$$\033[0m          " << std::endl;
+  std::cout << "| \033[1;34m$$\033[0m  \\ \033[1;34m$$\033[0m  /\033[1;34m$$$$$$\033[0m  /\033[1;34m$$$$$$$\033[0m   /\033[1;34m$$$$$$$\033[0m  /\033[1;34m$$$$$$\033[0m " << std::endl;
+  std::cout << "| \033[1;34m$$$$$$$\033[0m/ |____  \033[1;34m$$\033[0m| \033[1;34m$$\033[0m__  \033[1;34m$$\033[0m /\033[1;34m$$\033[0m__  \033[1;34m$$\033[0m |____  \033[1;34m$$\033[0m" << std::endl;
+  std::cout << "| \033[1;34m$$\033[0m____/   /\033[1;34m$$$$$$$\033[0m| \033[1;34m$$\033[0m  \\ \033[1;34m$$\033[0m| \033[1;34m$$\033[0m  | \033[1;34m$$\033[0m  /\033[1;34m$$$$$$$\033[0m" << std::endl;
+  std::cout << "| \033[1;34m$$\033[0m       /\033[1;34m$$\033[0m__  \033[1;34m$$\033[0m| \033[1;34m$$\033[0m  | \033[1;34m$$\033[0m| \033[1;34m$$\033[0m  | \033[1;34m$$\033[0m /\033[1;34m$$\033[0m__  \033[1;34m$$\033[0m" << std::endl;
+  std::cout << "| \033[1;34m$$\033[0m      |  \033[1;34m$$$$$$$\033[0m| \033[1;34m$$\033[0m  | \033[1;34m$$\033[0m|  \033[1;34m$$$$$$$\033[0m|  \033[1;34m$$$$$$$\033[0m" << std::endl;
+  std::cout << "|__/       \\_______/|__/  |__/ \\_______/ \\_______/" << std::endl;
+  std::cout << "                                                " << std::endl;
+
+
+  std::string input;
+  while(1) {
+    std::cout << "🍒\033[1;34mpandaRDB> \033[0m";
+    std::getline(std::cin, input);
+
+    std::vector<std::string> args;
+    std::istringstream iss(input);
+    std::string arg;
+    while (iss >> arg) {
+      args.push_back(arg);
+    }
+
+    if (args.empty()) {
+      continue;
+    }
+
+    processCommand(args);
+  }
 
   return 0;
 }
