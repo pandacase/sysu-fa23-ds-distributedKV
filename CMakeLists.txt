@@ -24,38 +24,38 @@ project(Distributed-KV C CXX)
 include(./common.cmake)
 
 # Proto file
-get_filename_component(hw_proto "./protos/distributedKV.proto" ABSOLUTE)
-get_filename_component(hw_proto_path "${hw_proto}" PATH)
+get_filename_component(kv_proto "./protos/distributedKV.proto" ABSOLUTE)
+get_filename_component(kv_proto_path "${kv_proto}" PATH)
 
 # Generated sources
-set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.pb.cc")
-set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.pb.h")
-set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.grpc.pb.cc")
-set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.grpc.pb.h")
+set(kv_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.pb.cc")
+set(kv_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.pb.h")
+set(kv_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.grpc.pb.cc")
+set(kv_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/distributedKV.grpc.pb.h")
 
 include_directories("leveldb/include")
 link_directories("leveldb/lib")
 
 add_custom_command(
-      OUTPUT "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
+      OUTPUT "${kv_proto_srcs}" "${kv_proto_hdrs}" "${kv_grpc_srcs}" "${kv_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
         --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        -I "${hw_proto_path}"
+        -I "${kv_proto_path}"
         --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${hw_proto}"
-      DEPENDS "${hw_proto}")
+        "${kv_proto}"
+      DEPENDS "${kv_proto}")
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-# hw_grpc_proto
-add_library(hw_grpc_proto
-  ${hw_grpc_srcs}
-  ${hw_grpc_hdrs}
-  ${hw_proto_srcs}
-  ${hw_proto_hdrs})
-target_link_libraries(hw_grpc_proto
+# kv_grpc_proto
+add_library(kv_grpc_proto
+  ${kv_grpc_srcs}
+  ${kv_grpc_hdrs}
+  ${kv_proto_srcs}
+  ${kv_proto_hdrs})
+target_link_libraries(kv_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF}
@@ -66,9 +66,9 @@ foreach(_target
   kv_client kv_master_server kv_worker_server
   kv_callback_client kv_callback_server
   kv_async_client kv_async_client2 kv_async_server)
-  add_executable(${_target} "${_target}.cc")
+  add_executable(${_target} "src/${_target}.cc")
   target_link_libraries(${_target}
-    hw_grpc_proto
+    kv_grpc_proto
     absl::flags
     absl::flags_parse
     ${_REFLECTION}
