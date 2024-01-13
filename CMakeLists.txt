@@ -19,7 +19,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(DistributedKV C CXX)
+project(Distributed-KV C CXX)
 
 include(./common.cmake)
 
