@@ -61,11 +61,11 @@ target_link_libraries(hw_grpc_proto
   ${_PROTOBUF_LIBPROTOBUF}
   leveldb)
 
-# Targets greeter_[async_](client|server)
+# Targets kv_[async_](client|server)
 foreach(_target
-  greeter_client greeter_master_server greeter_worker_server
-  greeter_callback_client greeter_callback_server
-  greeter_async_client greeter_async_client2 greeter_async_server)
+  kv_client kv_master_server kv_worker_server
+  kv_callback_client kv_callback_server
+  kv_async_client kv_async_client2 kv_async_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
