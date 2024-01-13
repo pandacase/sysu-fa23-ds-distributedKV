@@ -40,3 +40,34 @@ message HelloRequest {
 message HelloReply {
   string message = 1;
 }
+
+// client methods to master server
+service clientMethods {
+  rpc Setup(clientRequest) returns (stream clientResponse) {}
+  rpc Get(clientRequest) returns (stream clientResponse) {}
+  rpc Put(clientRequest) returns (stream clientResponse) {}
+  rpc Del(clientRequest) returns (stream clientResponse) {}
+}
+
+message clientRequest {
+  string method = 1;
+  string key = 2;
+  string value = 3;
+}
+
+message clientResponse {
+  string response = 1;
+  string state = 2;
+  repeated int32 port = 3;
+}
+
+
+// worker register
+service workerRegister {
+
+}
+
+message Register {
+  string request = 1;
+}
+

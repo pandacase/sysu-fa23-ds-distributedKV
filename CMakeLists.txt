@@ -24,7 +24,7 @@ project(Distributed-KV C CXX)
 include(./common.cmake)
 
 # Proto file
-get_filename_component(hw_proto "./distributedKV.proto" ABSOLUTE)
+get_filename_component(hw_proto "./protos/distributedKV.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 
 # Generated sources
