@@ -8,3 +8,4 @@ greeter_async_client2
 greeter_async_server
 
 cmake/*
+.vscode/*
