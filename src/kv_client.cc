@@ -40,6 +40,9 @@ using grpc::Status;
 using distributedKV::Greeter;
 using distributedKV::HelloReply;
 using distributedKV::HelloRequest;
+using distributedKV::kvMethods;
+using distributedKV::KVRequest;
+using distributedKV::KVResponse;
 
 
 class GreeterClient {
@@ -70,7 +73,7 @@ class GreeterClient {
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
-      return "RPC failed";
+      return "!RPC failed";
     }
   }
 
@@ -78,56 +81,196 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-// class 
+class kvMethodsClient {
+ public:
+  kvMethodsClient(std::shared_ptr<Channel> channel)
+      : stub_(kvMethods::NewStub(channel)) {}
 
-void processCommand(const std::vector<std::string>& args) {
+  //! @brief Get the value from remoteDB with key.
+  //! 
+  //! @param key : to query.
+  //! @return std::string : the value of the key, or `!RPC failed`.
+  std::string Get(const std::string& key) {
+    KVRequest request;
+    request.set_key(key);
+
+    KVResponse response;
+    
+    ClientContext context;
+    
+    // actual rpc
+    Status status = stub_->Get(&context, request, &response);
+
+    if (status.ok()) {
+      std:: cout << "Message: " << response.message() << std::endl;
+      return response.value();
+    } else {
+      std::cout << "Code "<< status.error_code() << ": " 
+                << status.error_message() << std::endl;
+      return "!RPC failed";
+    }
+  }
+
+  //! @brief Put the new value to the remoteDB with key,
+  //!        can be `update` or `insert`.
+  //! 
+  //! @param key : to update.
+  //! @param value : new value
+  //! @return std::string :  the new value of the key, or `!RPC failed`.
+  std::string Put(const std::string& key, const std::string& value) {
+    KVRequest request;
+    request.set_key(key);
+    request.set_value(value);
+
+    KVResponse response;
+    
+    ClientContext context;
+    
+    // actual rpc
+    Status status = stub_->Put(&context, request, &response);
+
+    if (status.ok()) {
+      std:: cout << "Message: " << response.message() << std::endl;
+      return response.value();
+    } else {
+      std::cout << "Code "<< status.error_code() << ": " 
+                << status.error_message() << std::endl;
+      return "!RPC failed";
+    }
+  }
+
+  //! @brief Delete the entry on the remoteDB with key.
+  //! 
+  //! @param key : to delete.
+  //! @return std::string : old value, or `!RPC failed`.
+  std::string Del(const std::string& key) {
+    KVRequest request;
+    request.set_key(key);
+
+    KVResponse response;
+    
+    ClientContext context;
+    
+    // actual rpc
+    Status status = stub_->Del(&context, request, &response);
+
+    if (status.ok()) {
+      std:: cout << "Message: " << response.message() << std::endl;
+      return response.value();
+    } else {
+      std::cout << "Code "<< status.error_code() << ": " 
+                << status.error_message() << std::endl;
+      return "!RPC failed";
+    }
+  }
+
+ private:
+  std::unique_ptr<kvMethods::Stub> stub_;
+};
+
+//! @brief Ask user to retry.
+//! 
+//! @return true if user input `y` or `yes`.
+//! @return false if user input `n` or `no`.
+bool pendingHandler() {
+  std::cout << "pandaRDB: RPC failed, would you like to retry? [y/n] " << std::endl;
+  std::string input;
+  std::cin >> input;
+  if (!input.empty() && input[0] == 'y') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+//! @brief Process the command from user input.
+//! 
+//! @param args : the command line arguments.
+void processCommand(const std::vector<std::string>& args, kvMethodsClient& methods) {
   std::string method = args[0];
-  std::string key = "";
-  std::string value = "";
-  if (method.compare("help") == 0) {
+  std::string key;
+  std::string value;
+
+  if (method.compare("help") == 0) {      // HELP  
     std::cout << "usage: <method> [-<args> <value>]" << std::endl;
     std::cout << std::endl;
     std::cout << "These are methods' examples:" << std::endl;
-    std::cout << "get -k 16         Get the value from remoteDB with key=16." << std::endl;
-    std::cout << "del -k 32         Delete the entry on the remoteDB with key=32." << std::endl;
-    std::cout << "put -k 64  -v 8   Put the value=8 to the remoteDB with key=64" << std::endl;
+    std::cout << "get -k 16         Get the value from remoteDB with key=16." 
+              << std::endl;
+    std::cout << "del -k 32         Delete the entry on the remoteDB with key=32." 
+              << std::endl;
+    std::cout << "put -k 64  -v 8   Put the value=8 to the remoteDB with key=64" 
+              << std::endl;
     std::cout << std::endl;
-  } else if (method.compare("get") == 0) {
-    if (args.size() != 3) {
-      std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." << std::endl;
-    } else {
-      if (args[1].compare("-k") == 0) {
+  } else if (method.compare("get") == 0) {    // GET
+    if (args.size() != 3) {                   // - failed request
+      std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." 
+                << std::endl;
+    } else {    
+      if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
-
-      } else {
-        std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." << std::endl;
+        value = methods.Get(key);
+        if (value.compare("!RPC failed") == 0) {  // - failed response
+          if (pendingHandler()) {
+            processCommand(args, methods);
+          }
+        } else {                              // - successfully response
+          std::cout << "pandaRDB: Successfully get value: " 
+                    << value << " with key: " << key << std::endl;
+        }
+      } else {                                // - failed request
+        std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." 
+                  << std::endl;
       }
     }
-  } else if (method.compare("del") == 0) {
-    if (args.size() != 3) {
-      std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." << std::endl;
+  } else if (method.compare("del") == 0) {    // DEL
+    if (args.size() != 3) {                   // - failed request
+      std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." 
+                << std::endl;
     } else {
-      if (args[1].compare("-k") == 0) {
+      if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
-
-      } else {
-        std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." << std::endl;
+        value = methods.Del(key);
+        if (value.compare("!RPC failed") == 0) {  // - failed response
+          if (pendingHandler()) {
+            processCommand(args, methods);
+          }
+        } else {                              // - successfully response
+          std::cout << "pandaRDB: Successfully delete key-value: " 
+                    << key << "-" << value << std::endl;
+        }
+      } else {                                // - failed request
+        std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." 
+                  << std::endl;
       }
     }
-  } else if (method.compare("put") == 0) {
-    if (args.size() != 5) {
-      std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." << std::endl;
+  } else if (method.compare("put") == 0) {    // PUT
+    if (args.size() != 5) {                   // - failed request
+      std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." 
+                << std::endl;
     } else {
-      if (args[1].compare("-k") == 0 && args[3].compare("-v") == 0) {
+      if (args[1].compare("-k") == 0 
+          && args[3].compare("-v") == 0) {    // - successfully request
         key = args[2];
         value = args[4];
-
-      } else {
-        std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." << std::endl;
+        value = methods.Put(key, value);
+        if (value.compare("!RPC failed") == 0) {  // - failed response
+          if (pendingHandler()) {
+            processCommand(args, methods);
+          }
+        } else {                              // - successfully response
+          std::cout << "pandaRDB: Successfully put value: " 
+                    << value << " with key: " << key << std::endl;
+        }
+      } else {                                // - failed request
+        std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." 
+                  << std::endl;
       }
     }
   } else {
-    std::cout << "pandaRDB: " << method << " is not a command. See 'help'." << std::endl;
+    std::cout << "pandaRDB: " << method << " is not a command. See 'help'." 
+              << std::endl;
   }
 }
 
@@ -139,12 +282,17 @@ int main(int argc, char** argv) {
   std::string target_str = absl::GetFlag(FLAGS_target);
   // We indicate that the channel isn't authenticated (use of
   // InsecureChannelCredentials()).
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
 
+  // GreeterClient greeter(
+  //     grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  // std::string user("world");
+  // std::string reply = greeter.SayHello(user);
+  // std::cout << "Greeter received: " << reply << std::endl;
+
+  kvMethodsClient methods(
+      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+
+  // Logo
   std::cout << "                                                " << std::endl;
   std::cout << "/\033[1;34m$$$$$$$\033[0m                            /\033[1;34m$$\033[0m          " << std::endl;
   std::cout << "| \033[1;34m$$\033[0m__  \033[1;34m$$\033[0m                          | \033[1;34m$$\033[0m          " << std::endl;
@@ -173,7 +321,7 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    processCommand(args);
+    processCommand(args, methods);
   }
 
   return 0;
