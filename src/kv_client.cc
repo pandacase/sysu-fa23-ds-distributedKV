@@ -200,7 +200,7 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
               << std::endl;
     std::cout << "del -k 32         Delete the entry on the remoteDB with key=32." 
               << std::endl;
-    std::cout << "put -k 64  -v 8   Put the value=8 to the remoteDB with key=64" 
+    std::cout << "put -k 64  -v 8   Put the value=8 to the remoteDB with key=64." 
               << std::endl;
     std::cout << std::endl;
   } else if (method.compare("get") == 0) {    // GET
