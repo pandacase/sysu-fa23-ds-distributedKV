@@ -59,13 +59,14 @@ message KVResponse {
   string value = 2;
 }
 
-//
+// worker Register
 service workerRegister {
   rpc Register(workerSetup) returns (survivalList) {}
 }
 
 message workerSetup {
-  string request = 1;
+  string message = 1;
+  int32 port= 2;
 }
 
 message survivalList {
@@ -73,8 +74,8 @@ message survivalList {
   repeated int32 port = 2;
 }
 
-//
-service workerSpread {
+// worker Spreader
+service workerSpreader {
   rpc Spread(updateNotice) returns (updateResponse) {}
 }
 

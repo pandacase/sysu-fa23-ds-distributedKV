@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_set>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -39,16 +40,20 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+
 using distributedKV::Greeter;
 using distributedKV::HelloReply;
 using distributedKV::HelloRequest;
+
 using distributedKV::kvMethods;
 using distributedKV::KVRequest;
 using distributedKV::KVResponse;
+
 using distributedKV::workerRegister;
 using distributedKV::workerSetup;
 using distributedKV::survivalList;
 
+// Default port (master)
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 // Logic and data behind the server's behavior.
@@ -61,13 +66,19 @@ class GreeterServiceImpl final : public Greeter::Service {
   }
 };
 
-class kvMethodsServiceImpl final : public kvMethods::Service {
-
-}
+// The list recording that which worker is active.
+std::unordered_set<int> survival_list;
+// The pointer point to the next worker : impl for load balancing
+int next_worker;
 
 class workerRegisterServiceImpl final : public workerRegister::Service {
 
-}
+};
+
+class kvMethodsServiceImpl final : public kvMethods::Service {
+  // Status Get()
+};
+
 
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
