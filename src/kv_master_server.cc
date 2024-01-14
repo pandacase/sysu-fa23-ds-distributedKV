@@ -33,9 +33,6 @@
 #else
 #include "distributedKV.grpc.pb.h"
 
-#include <cassert>
-#include "leveldb/db.h"
-
 #endif
 
 using grpc::Server;
@@ -45,6 +42,12 @@ using grpc::Status;
 using distributedKV::Greeter;
 using distributedKV::HelloReply;
 using distributedKV::HelloRequest;
+using distributedKV::kvMethods;
+using distributedKV::KVRequest;
+using distributedKV::KVResponse;
+using distributedKV::workerRegister;
+using distributedKV::workerSetup;
+using distributedKV::survivalList;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
@@ -58,9 +61,19 @@ class GreeterServiceImpl final : public Greeter::Service {
   }
 };
 
+class kvMethodsServiceImpl final : public kvMethods::Service {
+
+}
+
+class workerRegisterServiceImpl final : public workerRegister::Service {
+
+}
+
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
-  GreeterServiceImpl service;
+  GreeterServiceImpl greeter_service;
+  kvMethodsServiceImpl kvMethods_service;
+  workerRegisterServiceImpl workerRegister_service;
 
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -69,7 +82,9 @@ void RunServer(uint16_t port) {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
-  builder.RegisterService(&service);
+  builder.RegisterService(&greeter_service);
+  builder.RegisterService(&kvMethods_service);
+  builder.RegisterService(&workerRegister_service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
@@ -80,16 +95,8 @@ void RunServer(uint16_t port) {
 }
 
 int main(int argc, char** argv) {
-  leveldb::DB* db;
-  leveldb::Options options;
-  options.create_if_missing = true;
-  leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
-  assert(status.ok());
-  std::cout << status.ok() << std::endl;
-
   absl::ParseCommandLine(argc, argv);
   RunServer(absl::GetFlag(FLAGS_port));
 
-  delete db;
   return 0;
 }
