@@ -84,6 +84,8 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
+//! @brief KV Client End ---> Master Server
+//! 
 class kvMethodsClient {
  public:
   kvMethodsClient(std::shared_ptr<Channel> channel)
@@ -92,8 +94,8 @@ class kvMethodsClient {
   //! @brief Get the value from remoteDB with key.
   //! 
   //! @param key : to query.
-  //! @return std::string : the value of the key, or `!RPC failed`.
-  std::string Get(const std::string& key) {
+  //! @return KVResponse : the response
+  KVResponse Get(const std::string& key) {
     KVRequest request;
     request.set_key(key);
 
@@ -106,11 +108,11 @@ class kvMethodsClient {
 
     if (status.ok()) {
       std:: cout << "Message: " << response.message() << std::endl;
-      return response.value();
+      return response;
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return "!RPC failed";
+      return nullptr;
     }
   }
 
@@ -119,8 +121,8 @@ class kvMethodsClient {
   //! 
   //! @param key : to update.
   //! @param value : new value
-  //! @return std::string :  the new value of the key, or `!RPC failed`.
-  std::string Put(const std::string& key, const std::string& value) {
+  //! @return KVResponse : The reponse loaded with new value.
+  KVResponse Put(const std::string& key, const std::string& value) {
     KVRequest request;
     request.set_key(key);
     request.set_value(value);
@@ -134,19 +136,19 @@ class kvMethodsClient {
 
     if (status.ok()) {
       std:: cout << "Message: " << response.message() << std::endl;
-      return response.value();
+      return response;
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return "!RPC failed";
+      return nullptr;
     }
   }
 
   //! @brief Delete the entry on the remoteDB with key.
   //! 
   //! @param key : to delete.
-  //! @return std::string : old value, or `!RPC failed`.
-  std::string Del(const std::string& key) {
+  //! @return KVResponse : the response
+  KVResponse Del(const std::string& key) {
     KVRequest request;
     request.set_key(key);
 
@@ -159,11 +161,11 @@ class kvMethodsClient {
 
     if (status.ok()) {
       std:: cout << "Message: " << response.message() << std::endl;
-      return response.value();
+      return response;
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return "!RPC failed";
+      return nullptr;
     }
   }
 
@@ -213,14 +215,15 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
     } else {    
       if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
-        value = methods.Get(key);
-        if (value.compare("!RPC failed") == 0) {  // - failed response
+        KVResponse response = methods.Get(key);
+        if (response == nullptr) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
-          std::cout << "pandaRDB: Successfully get value: " 
-                    << value << " with key: " << key << std::endl;
+          std::cout << "pandaRDB: Successfully get value: `" 
+                    << response.value() << "` with key: `" << response.key()
+                    << "`" << std::endl;
         }
       } else {                                // - failed request
         std::cout << "pandaRDB: Incorrect parameters for `get`. See 'help'." 
@@ -234,14 +237,15 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
     } else {
       if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
-        value = methods.Del(key);
-        if (value.compare("!RPC failed") == 0) {  // - failed response
+        KVResponse response = methods.Del(key);
+        if (response == nullptr) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
-          std::cout << "pandaRDB: Successfully delete key-value: " 
-                    << key << "-" << value << std::endl;
+          std::cout << "pandaRDB: Successfully delete key-value: `" 
+                    << response.key() << "`-`" << response.value() 
+                    << "`" << std::endl;
         }
       } else {                                // - failed request
         std::cout << "pandaRDB: Incorrect parameters for `del`. See 'help'." 
@@ -257,14 +261,15 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
           && args[3].compare("-v") == 0) {    // - successfully request
         key = args[2];
         value = args[4];
-        value = methods.Put(key, value);
-        if (value.compare("!RPC failed") == 0) {  // - failed response
+        KVResponse response = methods.Put(key, value);
+        if (response == nullptr) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
-          std::cout << "pandaRDB: Successfully put value: " 
-                    << value << " with key: " << key << std::endl;
+          std::cout << "pandaRDB: Successfully put value: `" 
+                    << response.value() << "` with key: `" << response.key() 
+                    << "`" << std::endl;
         }
       } else {                                // - failed request
         std::cout << "pandaRDB: Incorrect parameters for `put`. See 'help'." 
