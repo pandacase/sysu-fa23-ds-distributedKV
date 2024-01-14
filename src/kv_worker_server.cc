@@ -19,6 +19,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <random>
+#include <unordered_set>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -38,14 +40,31 @@
 
 #endif
 
+using grpc::Channel;
+using grpc::ClientContext;
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+
 using distributedKV::Greeter;
 using distributedKV::HelloReply;
 using distributedKV::HelloRequest;
 
+using distributedKV::kvMethods;
+using distributedKV::KVRequest;
+using distributedKV::KVResponse;
+
+using distributedKV::workerRegister;
+using distributedKV::workerSetup;
+using distributedKV::survivalList;
+
+using distributedKV::workerSpreader;
+using distributedKV::updateNotice;
+using distributedKV::updateResponse;
+
+// Default port (master)
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 // Logic and data behind the server's behavior.
@@ -57,6 +76,71 @@ class GreeterServiceImpl final : public Greeter::Service {
     return Status::OK;
   }
 };
+
+// The list recording that which worker is active.
+std::unordered_set<int> survival_list;
+
+class workerRegisterClient {
+ public:
+  workerRegisterClient(std::shared_ptr<Channel> channel)
+      : stub_(workerRegister::NewStub(channel)) {}
+
+  bool Register(const std::string& message, const int& port) {
+    workerSetup request;
+    request.set_message("Hi i am worker.");
+    request.set_port(port);
+
+    survivalList response;
+
+    ClientContext context;
+
+    // actual rpc
+    Status status = stub_->Register(&context, request, &response);
+
+    if (status.ok()) {
+      std:: cout << "Message: " << response.message() << std::endl;
+      int surList_size = response.port_size();
+      for (int i = 0; i < surList_size; ++i) {
+        survival_list.insert(response.port(i));
+      }
+      return true;
+    } else {
+      std::cout << "Code "<< status.error_code() << ": " 
+                << status.error_message() << std::endl;
+      return false;
+    }
+  }
+
+ private:
+  std::unique_ptr<workerRegister::Stub> stub_;
+};
+
+// class workerSpreaderClient {
+//  public:
+//   workerSpreaderClient(std::shared_ptr<Channel> channel)
+//       : stub_(workerSpreader::NewStub(channel)) {}
+
+//   std::string workerSetup(const bool rollBackFlag, const std::string method,
+//                      const std::string& key, const std::string& value) {
+//     updateNotice request;
+//     request.set_rollbackflag(rollBackFlag);
+//     request.set_method(method);
+//     request.set_key(key);
+//     request.set_value(value);
+
+//     updateResponse response;
+
+//     ClientContext context;
+
+//     // actual rpc
+//     Status status = stub_->Spred(&context, request, &response);
+
+//     return "NULL";
+//   }
+
+//  private:
+//   std::unique_ptr<workerSpreader::Stub> stub_;
+// };
 
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
@@ -80,15 +164,28 @@ void RunServer(uint16_t port) {
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+
+  // Generate a random port for this worker to serve.
+  std::random_device rd;
+  std::mt19937 eng(rd());
+  std::uniform_int_distribution<uint16_t> dist(51051, 55051);
+  uint16_t random_port = dist(eng);
+  
+  // Init the database
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
-  leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+  std::string database_dir = "/tmp/testdb/" + std::to_string(random_port);
+  leveldb::Status status = leveldb::DB::Open(options, database_dir, &db);
   assert(status.ok());
-  std::cout << status.ok() << std::endl;
+  // std::cout << status.ok() << std::endl;
 
-  absl::ParseCommandLine(argc, argv);
-  RunServer(absl::GetFlag(FLAGS_port));
+  // Contact master for registering
+
+
+  // Run server
+  RunServer(random_port);
 
   delete db;
   return 0;
