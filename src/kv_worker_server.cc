@@ -29,7 +29,7 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/distributedKV.grpc.pb.h"
 #else
 #include "distributedKV.grpc.pb.h"
 
@@ -42,9 +42,9 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+using distributedKV::Greeter;
+using distributedKV::HelloReply;
+using distributedKV::HelloRequest;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 

@@ -28,7 +28,7 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/distributedKV.grpc.pb.h"
 #else
 #include "distributedKV.grpc.pb.h"
 #endif
@@ -38,9 +38,9 @@ ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+using distributedKV::Greeter;
+using distributedKV::HelloReply;
+using distributedKV::HelloRequest;
 
 class GreeterClient {
  public:

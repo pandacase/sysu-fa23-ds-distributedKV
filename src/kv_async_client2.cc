@@ -28,7 +28,7 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/distributedKV.grpc.pb.h"
 #else
 #include "distributedKV.grpc.pb.h"
 #endif
@@ -40,9 +40,9 @@ using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+using distributedKV::Greeter;
+using distributedKV::HelloReply;
+using distributedKV::HelloRequest;
 
 class GreeterClient {
  public:

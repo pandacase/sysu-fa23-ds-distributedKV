@@ -29,7 +29,7 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/distributedKV.grpc.pb.h"
 #else
 #include "distributedKV.grpc.pb.h"
 #endif
@@ -41,9 +41,9 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerUnaryReactor;
 using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+using distributedKV::Greeter;
+using distributedKV::HelloReply;
+using distributedKV::HelloRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::CallbackService {
