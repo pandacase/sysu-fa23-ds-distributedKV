@@ -57,11 +57,15 @@ message KVRequest {
 message KVResponse {
   string message = 1;
   string value = 2;
+  bool error = 3;
 }
+
+import "google/protobuf/empty.proto";
 
 // worker Register
 service workerRegister {
   rpc Register(workerSetup) returns (survivalList) {}
+  rpc Broadcast(survivalList) returns (google.protobuf.Empty) {}
 }
 
 message workerSetup {
@@ -71,7 +75,7 @@ message workerSetup {
 
 message survivalList {
   string message = 1;
-  repeated int32 port = 2;
+  repeated int32 ports = 2;
 }
 
 // worker Spreader
