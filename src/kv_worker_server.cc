@@ -67,7 +67,8 @@ using distributedKV::updateResponse;
 // Default port (master)
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
-// Logic and data behind the server's behavior.
+//! @brief Greeter Server End
+//! 
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
@@ -78,8 +79,10 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 // The list recording that which worker is active.
-std::unordered_set<int> survival_list;
+std::unordered_set<uint16_t> survival_list;
 
+//! @brief Register Client End
+//! 
 class workerRegisterClient {
  public:
   workerRegisterClient(std::shared_ptr<Channel> channel)
@@ -99,9 +102,9 @@ class workerRegisterClient {
 
     if (status.ok()) {
       std:: cout << "Message: " << response.message() << std::endl;
-      int surList_size = response.port_size();
+      int surList_size = response.ports_size();
       for (int i = 0; i < surList_size; ++i) {
-        survival_list.insert(response.port(i));
+        survival_list.insert(response.ports(i));
       }
       return true;
     } else {
@@ -115,33 +118,49 @@ class workerRegisterClient {
   std::unique_ptr<workerRegister::Stub> stub_;
 };
 
-// class workerSpreaderClient {
-//  public:
-//   workerSpreaderClient(std::shared_ptr<Channel> channel)
-//       : stub_(workerSpreader::NewStub(channel)) {}
+//! @brief Spreader Client End
+//! 
+class workerSpreaderClient {
+ public:
+  workerSpreaderClient(std::shared_ptr<Channel> channel)
+      : stub_(workerSpreader::NewStub(channel)) {}
 
-//   std::string workerSetup(const bool rollBackFlag, const std::string method,
-//                      const std::string& key, const std::string& value) {
-//     updateNotice request;
-//     request.set_rollbackflag(rollBackFlag);
-//     request.set_method(method);
-//     request.set_key(key);
-//     request.set_value(value);
+  std::string Spread(const bool rollBackFlag, const std::string method,
+                     const std::string& key, const std::string& value) {
+    updateNotice request;
+    request.set_rollbackflag(rollBackFlag);
+    request.set_method(method);
+    request.set_key(key);
+    request.set_value(value);
 
-//     updateResponse response;
+    updateResponse response;
 
-//     ClientContext context;
+    ClientContext context;
 
-//     // actual rpc
-//     Status status = stub_->Spred(&context, request, &response);
+    // actual rpc
+    Status status = stub_->Spread(&context, request, &response);
 
-//     return "NULL";
-//   }
+    return "null";
+  }
 
-//  private:
-//   std::unique_ptr<workerSpreader::Stub> stub_;
-// };
+ private:
+  std::unique_ptr<workerSpreader::Stub> stub_;
+};
 
+// Spreader Server End
+class workerSpreaderServiceImpl final : public workerSpreader::Service {
+
+};
+
+//! @brief KV Server End <--- Master Server
+//! 
+class kvMethodsServiceImpl final : public kvMethods::Service {
+  // Status Get()
+};
+
+//! @brief Server Runtime.
+//! 
+//! @param port : working port
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   GreeterServiceImpl service;
@@ -177,7 +196,7 @@ int main(int argc, char** argv) {
   leveldb::Options options;
   options.create_if_missing = true;
   std::string database_dir = "/tmp/testdb/" + std::to_string(random_port);
-  leveldb::Status status = leveldb::DB::Open(options, database_dir, &db);
+  leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
   assert(status.ok());
   // std::cout << status.ok() << std::endl;
 
