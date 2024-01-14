@@ -112,7 +112,8 @@ class kvMethodsClient {
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return nullptr;
+      response.set_error(true);
+      return response;
     }
   }
 
@@ -140,7 +141,8 @@ class kvMethodsClient {
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return nullptr;
+      response.set_error(true);
+      return response;
     }
   }
 
@@ -165,7 +167,8 @@ class kvMethodsClient {
     } else {
       std::cout << "Code "<< status.error_code() << ": " 
                 << status.error_message() << std::endl;
-      return nullptr;
+      response.set_error(true);
+      return response;
     }
   }
 
@@ -216,13 +219,13 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
       if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
         KVResponse response = methods.Get(key);
-        if (response == nullptr) {            // - failed response
+        if (response.error()) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
           std::cout << "pandaRDB: Successfully get value: `" 
-                    << response.value() << "` with key: `" << response.key()
+                    << response.value() << "` with key: `" << key
                     << "`" << std::endl;
         }
       } else {                                // - failed request
@@ -238,13 +241,13 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
       if (args[1].compare("-k") == 0) {       // - successfully request
         key = args[2];
         KVResponse response = methods.Del(key);
-        if (response == nullptr) {            // - failed response
+        if (response.error()) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
           std::cout << "pandaRDB: Successfully delete key-value: `" 
-                    << response.key() << "`-`" << response.value() 
+                    << key << "`-`" << response.value() 
                     << "`" << std::endl;
         }
       } else {                                // - failed request
@@ -262,13 +265,13 @@ void processCommand(const std::vector<std::string>& args, kvMethodsClient& metho
         key = args[2];
         value = args[4];
         KVResponse response = methods.Put(key, value);
-        if (response == nullptr) {            // - failed response
+        if (response.error()) {            // - failed response
           if (pendingHandler()) {
             processCommand(args, methods);
           }
         } else {                              // - successfully response
           std::cout << "pandaRDB: Successfully put value: `" 
-                    << response.value() << "` with key: `" << response.key() 
+                    << response.value() << "` with key: `" << key
                     << "`" << std::endl;
         }
       } else {                                // - failed request
